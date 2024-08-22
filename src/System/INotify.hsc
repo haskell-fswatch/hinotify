@@ -40,6 +40,7 @@ import Control.Monad
 import Control.Concurrent
 import Control.Concurrent.Async
 import Control.Exception as E hiding (mask)
+import Data.Bits ((.|.))
 import Data.Maybe
 import Data.Map (Map)
 import qualified Data.Map as Map
@@ -54,7 +55,7 @@ import System.Posix.ByteString.FilePath
 import System.Posix.Files.ByteString
 
 import GHC.IO.FD as FD (mkFD)
-import GHC.IO.Handle.FD (mkHandleFromFD)
+import GHC.IO.Handle.Internals (mkFileHandleNoFinalizer, addHandleFinalizer, handleFinalizer)
 import GHC.IO.Device (IODeviceType(Stream))
 
 import System.INotify.Masks
@@ -174,16 +175,20 @@ instance Show Cookie where
 
 initINotify :: IO INotify
 initINotify = do
-    fdint <- throwErrnoIfMinus1 "initINotify" c_inotify_init
-    (fd,fd_type) <- FD.mkFD fdint ReadMode (Just (Stream,0,0))
+    fdint <- throwErrnoIfMinus1 "initINotify" $ c_inotify_init1 (c_IN_NONBLOCK .|. c_IN_CLOEXEC)
+    (fd, _) <- FD.mkFD fdint ReadMode (Just (Stream,0,0))
             False{-is_socket-}
-            False{-is_nonblock-}
-    h <- mkHandleFromFD fd fd_type
+            True -- make non-blocking.  Otherwise reading uses select(), which
+                 -- can fail when there are >=1024 FDs
+
+    h <- mkFileHandleNoFinalizer fd
            (showString "<inotify handle, fd=" . shows fd $ ">")
            ReadMode
-           True  -- make non-blocking.  Otherwise reading uses select(), which
-                 -- can fail when there are >=1024 FDs
            Nothing -- no encoding, so binary
+           noNewlineTranslation
+
+    addHandleFinalizer h handleFinalizer
+
     em <- newMVar Map.empty
     (tid1, tid2) <- inotify_start_thread h em
     return (INotify h fdint em tid1 tid2)
@@ -359,6 +364,12 @@ cancelWait a = do cancel a; void $ waitCatch a
 withINotify :: (INotify -> IO a) -> IO a
 withINotify = bracket initINotify killINotify
 
-foreign import ccall unsafe "sys/inotify.h inotify_init" c_inotify_init :: IO CInt
+c_IN_NONBLOCK :: CInt
+c_IN_NONBLOCK = #const IN_NONBLOCK
+
+c_IN_CLOEXEC :: CInt
+c_IN_CLOEXEC = #const IN_CLOEXEC
+
+foreign import ccall unsafe "sys/inotify.h inotify_init1" c_inotify_init1 :: CInt -> IO CInt
 foreign import ccall unsafe "sys/inotify.h inotify_add_watch" c_inotify_add_watch :: CInt -> CString -> CUInt -> IO CInt
 foreign import ccall unsafe "sys/inotify.h inotify_rm_watch" c_inotify_rm_watch :: CInt -> CInt -> IO CInt
