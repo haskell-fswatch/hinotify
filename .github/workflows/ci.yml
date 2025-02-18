@@ -7,7 +7,7 @@ on:
 
 jobs:
   cabal:
-    name: ghc ${{ matrix.ghc }}
+    name: cabal / ghc ${{ matrix.ghc }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -67,7 +67,8 @@ jobs:
         # - stack-ghc92.yaml
         - stack-ghc94.yaml
         - stack-ghc96.yaml
-        - stack.yaml # Current dev version at ghc98
+        - stack-ghc98.yaml
+        - stack.yaml # Current dev version at ghc910
 
     steps:
     - uses: actions/checkout@v2
