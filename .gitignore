@@ -1,5 +1,5 @@
 dist
-_darcs
 *.swp
 .cabal-sandbox
 cabal.sandbox.config
+.stack-work

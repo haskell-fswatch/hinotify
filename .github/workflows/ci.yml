@@ -1,0 +1,129 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+jobs:
+  cabal:
+    name: ${{ matrix.os }} / ghc ${{ matrix.ghc }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macOS-latest, windows-latest]
+        ghc:
+          - "8.10.7"
+          - "9.0.2"
+          - "9.2.8"
+          - "9.4.8"
+          - "9.6.6"
+          - "9.8.4"
+          - "9.10.1"
+        exclude:
+        # These don't work on GitHub CI anymore because they need llvm@13, which became
+        # disabled on 12/31/2024
+        - os: macOS-latest
+          ghc: 8.10.7
+        - os: macOS-latest
+          ghc: 9.0.2
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install dependencies (macOS)
+      if: runner.os == 'macOS'
+      run: |
+        brew update
+        # https://gitlab.haskell.org/ghc/ghc/-/issues/20592#note_391266
+        echo "C_INCLUDE_PATH=`xcrun --show-sdk-path`/usr/include/ffi" >> "$GITHUB_ENV"
+
+    - uses: haskell-actions/setup@v2
+      id: setup-haskell-cabal
+      name: Setup Haskell (Cabal)
+      with:
+        ghc-version: ${{ matrix.ghc }}
+        cabal-version: "latest"
+
+    - name: Freeze
+      run: |
+        cabal update
+        cabal configure --enable-tests --enable-benchmarks --test-show-details=direct
+        cabal freeze
+        cat cabal.project.freeze
+
+    - uses: actions/cache/restore@v4
+      id: cache-restore
+      with:
+        path: ${{ steps.setup-haskell-cabal.outputs.cabal-store }}
+        key: ${{ runner.os }}-${{ matrix.ghc }}-${{ hashFiles('cabal.project.freeze') }}-key1
+
+    - name: Build
+      run: cabal build all
+
+    - name: Test
+      run: cabal test
+
+    - uses: actions/cache/save@v4
+      if: always() && steps.cache-restore.outputs.cache-hit != 'true'
+      with:
+        path: ${{ steps.setup-haskell-cabal.outputs.cabal-store }}
+        key: ${{ runner.os }}-${{ matrix.ghc }}-${{ hashFiles('cabal.project.freeze') }}-key1
+
+  stack:
+    name: ${{ matrix.os }} / ${{ matrix.stack-yaml }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macOS-latest, windows-latest]
+        stack-yaml:
+        # - stack-ghc90.yaml
+        # - stack-ghc92.yaml
+        - stack-ghc94.yaml
+        - stack-ghc96.yaml
+        - stack.yaml # Current dev version at ghc98
+        exclude:
+        # These don't work on GitHub CI anymore because they need llvm@13, which became
+        # disabled on 12/31/2024
+        - os: macOS-latest
+          stack-yaml: stack-ghc90.yaml
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install dependencies (macOS)
+      if: runner.os == 'macOS'
+      run: |
+        brew update
+        # https://gitlab.haskell.org/ghc/ghc/-/issues/20592#note_391266
+        echo "C_INCLUDE_PATH=`xcrun --show-sdk-path`/usr/include/ffi" >> "$GITHUB_ENV"
+
+    - uses: haskell-actions/setup@v2
+      name: Setup Haskell (Stack)
+      with:
+        enable-stack: true
+        stack-no-global: true
+        stack-version: "latest"
+
+    - name: Run stack setup
+      shell: bash
+      run: |
+        export STACK_EXTRA_ARGS="--stack-yaml ${{matrix.stack-yaml}}"
+        stack setup $STACK_EXTRA_ARGS
+        echo STACK_EXTRA_ARGS="$STACK_EXTRA_ARGS" >> $GITHUB_ENV
+
+    - uses: actions/cache@v4
+      name: Cache ~/.stack
+      with:
+        path: ~/.stack
+        key: ${{ runner.os }}-${{ matrix.stack-yaml }}-stack-key3
+
+    - name: Build
+      run: |
+        stack build $STACK_EXTRA_ARGS --test --bench --no-run-tests --no-run-benchmarks
+
+    - name: Test
+      run: |
+        stack test $STACK_EXTRA_ARGS

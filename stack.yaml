@@ -1,0 +1,7 @@
+resolver: lts-23.8
+
+packages:
+- '.'
+
+nix:
+  pure: false
