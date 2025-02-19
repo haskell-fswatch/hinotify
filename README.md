@@ -1,7 +1,7 @@
 hinotify: inotify for Haskell
 =============================
 
-[![Build Status](https://api.travis-ci.org/kolmodin/hinotify.png?branch=master)](http://travis-ci.org/kolmodin/hinotify)
+[![CI](https://github.com/haskell-fswatch/hinotify/actions/workflows/ci.yml/badge.svg)](https://github.com/haskell-fswatch/hinotify/actions/workflows/ci.yml)
 
 About
 -----
