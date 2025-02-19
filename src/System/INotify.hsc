@@ -35,30 +35,28 @@ module System.INotify
 
 #include "sys/inotify.h"
 
-import Prelude hiding (init)
-import Control.Monad
 import Control.Concurrent
 import Control.Concurrent.Async
 import Control.Exception as E hiding (mask)
+import Control.Monad
 import Data.Bits ((.|.))
-import Data.Maybe
 import Data.Map (Map)
 import qualified Data.Map as Map
+import Data.Maybe
 import Foreign.C
 import Foreign.Marshal hiding (void)
 import Foreign.Ptr
 import Foreign.Storable
+import GHC.IO.Device (IODeviceType(Stream))
+import GHC.IO.FD as FD (mkFD)
+import GHC.IO.Handle (mkFileHandle)
+import Prelude hiding (init)
+import System.INotify.Masks
 import System.IO
 import System.IO.Error
-
 import System.Posix.ByteString.FilePath
 import System.Posix.Files.ByteString
 
-import GHC.IO.FD as FD (mkFD)
-import GHC.IO.Handle.Internals (mkFileHandleNoFinalizer, addHandleFinalizer, handleFinalizer)
-import GHC.IO.Device (IODeviceType(Stream))
-
-import System.INotify.Masks
 
 type FD = CInt
 type WD = CInt
@@ -177,17 +175,15 @@ initINotify :: IO INotify
 initINotify = do
     fdint <- throwErrnoIfMinus1 "initINotify" $ c_inotify_init1 (c_IN_NONBLOCK .|. c_IN_CLOEXEC)
     (fd, _) <- FD.mkFD fdint ReadMode (Just (Stream,0,0))
-            False{-is_socket-}
-            True -- make non-blocking.  Otherwise reading uses select(), which
-                 -- can fail when there are >=1024 FDs
+        False -- is_socket
+        True  -- make non-blocking.  Otherwise reading uses select(), which can fail when there are >=1024 FDs
 
-    h <- mkFileHandleNoFinalizer fd
-           (showString "<inotify handle, fd=" . shows fd $ ">")
-           ReadMode
-           Nothing -- no encoding, so binary
-           noNewlineTranslation
-
-    addHandleFinalizer h handleFinalizer
+    h <- mkFileHandle
+        fd
+        (showString "<inotify handle, fd=" . shows fd $ ">")
+        ReadMode
+        Nothing -- no encoding, so binary
+        noNewlineTranslation
 
     em <- newMVar Map.empty
     (tid1, tid2) <- inotify_start_thread h em
