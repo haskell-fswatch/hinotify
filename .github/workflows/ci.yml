@@ -21,6 +21,13 @@ jobs:
           - "9.6.6"
           - "9.8.4"
           - "9.10.1"
+        exclude:
+        # These don't work on GitHub CI anymore because they need llvm@13, which became
+        # disabled on 12/31/2024
+        - os: ubuntu-24.04-arm
+          ghc: 8.10.7
+        - os: ubuntu-24.04-arm
+          ghc: 9.0.2
 
     steps:
     - uses: actions/checkout@v4
@@ -58,7 +65,7 @@ jobs:
         key: ${{ runner.os }}-${{ matrix.ghc }}-${{ hashFiles('cabal.project.freeze') }}-key1
 
   stack:
-    name: ${{ matrix.stack-yaml }}
+    name: ubuntu-latest / ${{ matrix.stack-yaml }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
