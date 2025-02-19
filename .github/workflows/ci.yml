@@ -64,7 +64,7 @@ jobs:
       matrix:
         stack-yaml:
         # - stack-ghc90.yaml
-        # - stack-ghc92.yaml
+        - stack-ghc92.yaml
         - stack-ghc94.yaml
         - stack-ghc96.yaml
         - stack-ghc98.yaml
