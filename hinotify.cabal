@@ -12,7 +12,7 @@ bug-reports:        https://github.com/kolmodin/hinotify/issues
 license:            BSD3
 license-file:       LICENSE
 author:             Lennart Kolmodin
-maintainer:         Lennart Kolmodin <kolmodin@gmail.com>
+maintainer:         Tom McLaughlin <tom@codedown.io>
 extra-source-files: README.md, CHANGELOG.md
 cabal-version:      >= 1.10
 
