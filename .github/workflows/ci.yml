@@ -7,11 +7,12 @@ on:
 
 jobs:
   cabal:
-    name: cabal / ghc ${{ matrix.ghc }}
-    runs-on: ubuntu-latest
+    name: ${{ matrix.os }} / ghc ${{ matrix.ghc }}
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm]
         ghc:
           - "8.10.7"
           - "9.0.2"
@@ -42,7 +43,7 @@ jobs:
       id: cache-restore
       with:
         path: ${{ steps.setup-haskell-cabal.outputs.cabal-store }}
-        key: ${{ matrix.ghc }}-${{ hashFiles('cabal.project.freeze') }}-key1
+        key: ${{ runner.os }}-${{ matrix.ghc }}-${{ hashFiles('cabal.project.freeze') }}-key1
 
     - name: Build
       run: cabal build all
@@ -54,7 +55,7 @@ jobs:
       if: always() && steps.cache-restore.outputs.cache-hit != 'true'
       with:
         path: ${{ steps.setup-haskell-cabal.outputs.cabal-store }}
-        key: ${{ matrix.ghc }}-${{ hashFiles('cabal.project.freeze') }}-key1
+        key: ${{ runner.os }}-${{ matrix.ghc }}-${{ hashFiles('cabal.project.freeze') }}-key1
 
   stack:
     name: ${{ matrix.stack-yaml }}
