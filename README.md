@@ -6,9 +6,9 @@ hinotify: inotify for Haskell
 About
 -----
 
-This package provides bindings to [inotify](http://www.kernel.org/pub/linux/kernel/people/rml/inotify/) which has been part of the Linux kernel since 2.6.13.
+This package provides bindings to [inotify](http://www.kernel.org/pub/linux/kernel/people/rml/inotify/), which has been part of the Linux kernel since 2.6.13.
 
-This kernel subsystem provides file system event notifications. Simply add a watcher to a file or directory and you get events when it is accessed, modified, etc.
+The `inotify` subsystem provides file system event notifications. Simply add a watcher to a file or directory and you get events when it is accessed, modified, etc.
 
 News
 ----
@@ -32,7 +32,7 @@ addWatch :: INotify
 removeWatch :: WatchDescriptor -> IO ()
 ```
 
-See the [example](./examples/simple/simple.hs) or the [docs](https://hackage.haskell.org/package/hinotify/docs/System-INotify.html).
+See this [example](./examples/simple/simple.hs) or the [docs](https://hackage.haskell.org/package/hinotify/docs/System-INotify.html).
 
 Author
 ------
