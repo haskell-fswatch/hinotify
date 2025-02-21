@@ -1,13 +1,21 @@
 hinotify
 ======
 
+## 0.4.2
+
+* Depend on libinotify on NetBSD (https://github.com/haskell-fswatch/hinotify/pull/35)
+* Fix for GHC 9.10 (https://github.com/haskell-fswatch/hinotify/pull/39)
+* Switch maintainer to thomasjm
+* Switch to GitHub Actions CI to test both Cabal and Stack builds
+* Start testing Ubuntu ARM in CI
+
 ## 0.4.1
 
-* TODO: fill in
+* Depend on inotify library on {Free,Open}BSD
 
 ## 0.4
 
-* TODO: fill in
+* Allow async-2.*
 
 ## 0.3.10
 
